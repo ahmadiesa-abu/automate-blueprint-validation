@@ -1,0 +1,53 @@
+name: validate blueprint on push
+on:
+  push:
+    paths:
+    - "blueprint_code/*"
+jobs:
+  validate_blueprint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+          architecture: x64
+      - name: Install cfy-lint
+        run: |
+          pip3 install --user --upgrade cfy-lint
+      - name: Check blueprint by cfy-lint
+        run: |
+          cfy-lint -b blueprint_code/blueprint.yaml
+      - name: Check blueprint by cfy blueprint validate
+        uses: cloudify-cosmo/cli-action@v1.3
+        with:
+          command: blueprints validate blueprint_code/blueprint.yaml
+
+  install_blueprint:
+    runs-on: ubuntu-latest
+    environment: 'approve-tests'
+    needs: validate_blueprint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Upload blueprint
+        id: upload-blueprint
+        uses: cloudify-cosmo/cli-action@v1.3
+        with:
+          command: blueprints upload blueprint_code/blueprint.yaml -b bl-dev-${{ github.run_id }}
+      - name: Install blueprint
+        uses: cloudify-cosmo/install-or-update-action@v1.3
+        with:
+          environment-name: bl-dev-${{ github.run_id }}
+          blueprint-id: bl-dev-${{ github.run_id }}
+          delete-old-blueprint: false
+
+env:
+  CLOUDIFY_HOST: ${{ secrets.CLOUDIFY_HOST }}
+  CLOUDIFY_USERNAME: ${{ secrets.CLOUDIFY_USERNAME }}
+  CLOUDIFY_PASSWORD: ${{ secrets.CLOUDIFY_PASSWORD }}
+  # CLOUDIFY_TOKEN: ${{secrets.CLOUDIFY_TOKEN }}
+  CLOUDIFY_TENANT: ${{ secrets.CLOUDIFY_TENANT }}
+  CLOUDIFY_SSL: ${{ secrets.CLOUDIFY_SSL }}
