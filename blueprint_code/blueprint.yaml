@@ -45,7 +45,7 @@ inputs:
 node_types:
 
   cloudify.nodes.dummy:
-    dervied_from: cloudify.nodes.Root
+    derived_from: cloudify.nodes.Root
     properties:
       some_value:
         type: string
@@ -57,4 +57,4 @@ node_templates:
   dummy:
     type: cloudify.nodes.dummy
     properties:
-      some_value: {get_input: non_existent_input }
+      some_value: {get_input: test_multiple_choice }
